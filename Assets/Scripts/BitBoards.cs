@@ -37,6 +37,7 @@ public class BitBoards : MonoBehaviour
 
     public static ulong[] Random;
 
+    uint seed = 1804289383;
 
     //constants to show a fully flipped board apart from the specified columns
     //used for checking if a move from one side wraps over to the other on the visual bitboard
@@ -127,45 +128,94 @@ public class BitBoards : MonoBehaviour
 
     void Start()
     {
-        string bitBoard = " ";
+        ulong block = 0L;
+        
+        block = SetBit(block, (int)Squares.f6);
+        block = SetBit(block, (int)Squares.b2);
+        block = SetBit(block, (int)Squares.d6);
+        block = SetBit(block, (int)Squares.e6);
+        block = SetBit(block, (int)Squares.d2);
+        block = SetBit(block, (int)Squares.g4);
+        block = SetBit(block, (int)Squares.b4);
+        
 
-        for (int row = 0; row < 8; row++)
-        {
-            for (int column = 0; column < 8; column++)
-            {
-                int square = row * 8 + column;
+        PrintBitBoard(block, "block");
 
-                bitBoard += BitCounter(RookAttacks[square]).ToString();
-                bitBoard += ", ";
-            }
-            bitBoard += System.Environment.NewLine;
-            bitBoard += " ";
-        }
-        Debug.Log($"{bitBoard}");
+        PrintBitBoard(CalculateBishopAttacksRunTime(28, block), "bishop attacks");
+        PrintBitBoard(CalculateRookAttacksRunTime((int)Squares.d4, block), "rook attacks");
     }
 
-        #region new
-        ulong SetOccupancy(int index, int bitsInMask, UInt64 attackMask)
+    ulong FindMagicNumber(int square, int relevantBits, int bishop)
+    {
+        ulong[] occupancies = new ulong[4096];
+        ulong[] attacks = new ulong[4096];
+        ulong[] usedAttacks = new ulong[4096];
+        ulong attackMask = bishop == 1 ? CalculateBishopAttacks(square) : CalculateRookAttacks(square);
+
+        int occupancyIndeces = 1 << relevantBits;
+
+        for (int i = 0; i < occupancyIndeces; i++)
         {
-            ulong occupancy = 0L;
-
-            for (int count = 0; count < bitsInMask; count++)
-            {
-                // returns location of the first bit that is on in a bitboard
-                int square = ReturnFirstBitIndex(attackMask);
-                attackMask = RemoveBit(attackMask, square);
-
-                if ((index & (1 << count)) != 0)
-                {
-                    //set occupancy table bit on at square
-                    occupancy |= (shiftOn << square);
-                }
-            }
-            return occupancy;
+            occupancies[i] = SetOccupancy(i, relevantBits, attackMask);
         }
-        #endregion
+        //placeholder
+        return occupancies[0];
+    }
 
-        #region BitOperations
+    #region RandomMagicGeneration
+
+    //creating my own pseudo random to ensure results
+    //of random numbers are same cross platform/architecture
+    uint RandomNumberGen32()
+    {
+        uint number = seed;
+        number ^= number << 13;
+        number ^= number >> 17;
+        number ^= number << 5;
+
+        seed = number;
+
+        return number;
+    }
+
+    ulong RandomNumberGen64()
+    {
+        ulong n1, n2, n3, n4;
+        n1 = (RandomNumberGen32()) & 0xFFFF;
+        n2 = (RandomNumberGen32()) & 0xFFFF;
+        n3 = (RandomNumberGen32()) & 0xFFFF;
+        n4 = (RandomNumberGen32()) & 0xFFFF;
+
+        return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
+    }
+    
+    ulong MagicNumberCandidate()
+    {
+        ulong value = RandomNumberGen64() & RandomNumberGen64() & RandomNumberGen64();
+        return value;
+    }
+
+    ulong SetOccupancy(int index, int bitsInMask, UInt64 attackMask)
+    {
+        ulong occupancy = 0L;
+
+        for (int count = 0; count < bitsInMask; count++)
+        {
+            // returns location of the first bit that is on in a bitboard
+            int square = ReturnFirstBitIndex(attackMask);
+            attackMask = RemoveBit(attackMask, square);
+
+            if ((index & (1 << count)) != 0)
+            {
+                //set occupancy table bit on at square
+                occupancy |= (shiftOn << square);
+            }
+        }
+        return occupancy;
+    }
+    #endregion
+
+    #region BitOperations
 
         //returns value of a bit at the location of square
         public bool GetBit(ulong bitBoard, int square)
@@ -238,7 +288,7 @@ public class BitBoards : MonoBehaviour
 
         #endregion
 
-        #region tests
+    #region tests
 
         //gui for representing the bitboard in a human friendly way, purely for debugging and visualisation
         public void PrintBitBoard(ulong bitBoard, string name)
@@ -349,10 +399,11 @@ public class BitBoards : MonoBehaviour
 
             return array;
         }
-        #endregion
+    #endregion
 
-        //loops over every character in the fen string and updates the relevant bitboard to contain a piece
-        public void SetBitBoardsFromFen()
+    #region initialize bitboards
+    //loops over every character in the fen string and updates the relevant bitboard to contain a piece
+    public void SetBitBoardsFromFen()
         {
             char[] fenLayout = FenTranslator.PiecePositions.ToCharArray();
             int square = 0;
@@ -480,14 +531,14 @@ public class BitBoards : MonoBehaviour
                 BoardState[(int)Pieces.rooks] = Rooks;
             }
         }
-        public void InitializeKingAttacks()
+    public void InitializeKingAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
                 KingAttacks[square] = CalculateKingAttacks(square);
             }
         }
-        public void InitializePawnAttacks()
+    public void InitializePawnAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
@@ -495,28 +546,28 @@ public class BitBoards : MonoBehaviour
                 PawnAttacks[(int)PieceColor.black, square] = CalculatePawnAttacks(PieceColor.black, square);
             }
         }
-        public void InitializeKnightAttacks()
+    public void InitializeKnightAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
                 KnightAttacks[square] = CalculateKnightAttacks(square);
             }
         }
-        public void InitializeBishopAttacks()
+    public void InitializeBishopAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
                 BishopAttacks[square] = CalculateBishopAttacks(square);
             }
         }
-        public void InitializeRookAttacks()
+    public void InitializeRookAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
                 RookAttacks[square] = CalculateRookAttacks(square);
             }
         }
-        public void InitializeQueenAttacks()
+    public void InitializeQueenAttacks()
         {
             for (int square = 0; square < 64; square++)
             {
@@ -524,8 +575,10 @@ public class BitBoards : MonoBehaviour
                 QueenAttacks[square] |= BishopAttacks[square];
             }
         }
+    #endregion
 
-        ulong CalculateKingAttacks(int square)
+    #region calculate attack masks
+    ulong CalculateKingAttacks(int square)
         {
             ulong attacks = 0L;
 
@@ -545,7 +598,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-        ulong CalculatePawnAttacks(PieceColor color, int square)
+    ulong CalculatePawnAttacks(PieceColor color, int square)
         {
             ulong attacks = 0L;
 
@@ -570,7 +623,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-        ulong CalculateKnightAttacks(int square)
+    ulong CalculateKnightAttacks(int square)
         {
             ulong attacks = 0L;
 
@@ -591,7 +644,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-        ulong CalculateBishopAttacks(int square)
+    ulong CalculateBishopAttacks(int square)
         {
             ulong attacks = 0L;
 
@@ -620,7 +673,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-        ulong CalculateRookAttacks(int square)
+    ulong CalculateRookAttacks(int square)
         {
             ulong attacks = 0L;
 
@@ -649,7 +702,74 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-    
+
+    ulong CalculateBishopAttacksRunTime(int square, ulong blockers)
+    {
+        ulong attacks = 0L;
+
+        int rank;
+        int file;
+
+        int targetRank = square / 8;
+        int targetFile = square % 8;
+
+        for (rank = targetRank + 1, file = targetFile + 1; rank <= 7 && file <= 7; rank++, file++)
+        {
+            attacks |= (shiftOn << (rank * 8 + file));
+            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+        }
+        for (rank = targetRank - 1, file = targetFile + 1; rank >= 0 && file <= 7; rank--, file++)
+        {
+            attacks |= (shiftOn << (rank * 8 + file));
+            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+        }
+        for (rank = targetRank + 1, file = targetFile - 1; rank <= 7 && file >= 0; rank++, file--)
+        {
+            attacks |= (shiftOn << (rank * 8 + file));
+            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+        }
+        for (rank = targetRank - 1, file = targetFile - 1; rank >= 0 && file >= 0; rank--, file--)
+        {
+            attacks |= (shiftOn << (rank * 8 + file));
+            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+        }
+
+        return attacks;
+    }
+    ulong CalculateRookAttacksRunTime(int square, ulong blockers)
+    {
+        ulong attacks = 0L;
+
+        int rank;
+        int file;
+
+        int targetRank = square / 8;
+        int targetFile = square % 8;
+
+        for (rank = targetRank + 1; rank <= 7; rank++)
+        {
+            attacks |= (shiftOn << (rank * 8 + targetFile));
+            if (((shiftOn << (rank * 8 + targetFile)) & blockers) != 0) break;
+        }
+        for (rank = targetRank - 1; rank >= 0; rank--)
+        {
+            attacks |= (shiftOn << (rank * 8 + targetFile));
+            if (((shiftOn << (rank * 8 + targetFile)) & blockers) != 0) break;
+        }
+        for (file = targetFile + 1; file <= 7; file++)
+        {
+            attacks |= (shiftOn << (targetRank * 8 + file));
+            if (((shiftOn << (targetRank * 8 + file)) & blockers) != 0) break;
+        }
+        for (file = targetFile - 1; file >= 0; file--)
+        {
+            attacks |= (shiftOn << (targetRank * 8 + file));
+            if (((shiftOn << (targetRank * 8 + file)) & blockers) != 0) break;
+        }
+
+        return attacks;
+    }
+    #endregion
 }
 
 
