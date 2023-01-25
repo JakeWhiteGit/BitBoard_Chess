@@ -5,10 +5,18 @@ using UnityEngine;
 
 public class InputManager : MonoBehaviour
 {
+    [SerializeField] BitBoards bitBoards;
+    [SerializeField] Board board;
+
     Vector2 mousePosition;
     RaycastHit2D tileUnderCursor;
 
-    public int selectedTile;
+    public Tile SelectedTile;
+    public int TileIndex;
+
+    int pieceType;
+    int pieceColor;
+    ulong legalMoves;
 
     void Update()
     {
@@ -16,15 +24,34 @@ public class InputManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+
+            for (int i = 0; i < 64; i++)
+            {
+                board.Tiles[i].selected = false;
+            }
+
             //if there is a tile under the cursor return its position in the array
             if (tileUnderCursor.collider is null) return;
-            selectedTile = tileUnderCursor.collider.GetComponent<Tile>().location;
+            SelectedTile = tileUnderCursor.collider.GetComponent<Tile>();
+            TileIndex = SelectedTile.location;
 
-            //resets the current bitboard representing last selected tile
-            BitBoards.PlayerTileSelection = 0L;
-            BitBoards.PlayerTileSelection = BitBoards.StaticBitBoards.SetBit(BitBoards.PlayerTileSelection, selectedTile);
+            pieceType = bitBoards.GetPieceType(TileIndex);
+            pieceColor = bitBoards.GetPieceColor(TileIndex);
+            legalMoves = bitBoards.CalculateSelectedMove(TileIndex, pieceType, pieceColor);
 
-            //fire event on tile to process logic when selected
+            int[] legalMoveBitIndices = bitBoards.ReturnAllBitIndices(legalMoves);
+
+            Debug.Log($"{pieceColor}");
+
+            for (int i = 0; i < legalMoveBitIndices.Length; i++)
+            {
+                board.Tiles[legalMoveBitIndices[i]].selected = false;
+                
+                if (board.Tiles[legalMoveBitIndices[i]].location == legalMoveBitIndices[i])
+                {
+                    board.Tiles[legalMoveBitIndices[i]].selected = true;
+                }
+            }
         }
     }
 

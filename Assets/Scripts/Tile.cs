@@ -8,6 +8,8 @@ public class Tile : MonoBehaviour
     SpriteRenderer spriteRenderer;
     Color defaultColor;
 
+    public bool selected;
+
     void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();    
@@ -18,8 +20,6 @@ public class Tile : MonoBehaviour
     }
     void Update()
     {
-        bool selected = location == BitBoards.StaticBitBoards.ReturnFirstBitIndex(BitBoards.PlayerTileSelection) ? true : false;
-        
         if(selected is true)
         {
             spriteRenderer.color = Color.green;

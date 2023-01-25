@@ -10,7 +10,8 @@ public class Board : MonoBehaviour
     // Pieces same as FEN
     [SerializeField] GameObject B, K, N, P, Q, R, b, k, n, p, q, r;
 
-    GameObject[] tiles;
+    public Tile[] Tiles;
+    public GameObject[] TilesObject;
 
     void Start()
     {
@@ -20,7 +21,8 @@ public class Board : MonoBehaviour
 
     public void GenerateBoard()
     {
-        tiles = new GameObject[64];
+        Tiles = new Tile[64];
+        TilesObject = new GameObject[64];
         int square = 0;
         
         for (int row = 7; row >= 0; row--)
@@ -30,7 +32,8 @@ public class Board : MonoBehaviour
                 bool isEven = (column + row) % 2 != 0;
                 Vector2 position = new Vector2(-3.5f + column, -3.5f + row);
 
-                tiles[square] = InstantiateTile(position, isEven, square);
+                TilesObject[square] = InstantiateTile(position, isEven, square);
+                Tiles[square] = TilesObject[square].GetComponent<Tile>();
                 square++;
             }
         }
@@ -82,7 +85,7 @@ public class Board : MonoBehaviour
             {
                 if (indices1[i] == indices2[j])
                 {
-                    Instantiate(piece, tiles[indices1[i]].transform.position, Quaternion.identity, tiles[indices1[i]].transform);
+                    Instantiate(piece, Tiles[indices1[i]].transform.position, Quaternion.identity, Tiles[indices1[i]].transform);
                 }
             }
         }

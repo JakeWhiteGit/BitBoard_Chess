@@ -34,7 +34,7 @@ public class GameManager : MonoBehaviour
         InitializeBoardGUI();
 
         ChoosePlayerColor();
-       // RotateBoard();
+        RotateCamera();
     }
 
     private void InitializeBoardGUI()
@@ -70,7 +70,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void RotateBoard()
+    public void RotateCamera()
     {
         float zRotation = PlayerColor ? 0f : 180f;
         cam.transform.rotation = new Quaternion(0, 0, zRotation, 0);

@@ -14,20 +14,18 @@ public class BitBoards : MonoBehaviour
     //saves last tile a player clicked as a bitboard
     public static ulong PlayerTileSelection = 0L;
 
-    public static ulong[] BoardState;
-
-    public static ulong BlockedForWhite;
-    public static ulong BlockedForBlack;
-
-    //ulong types binary values being used to represent piece locations
-    public static ulong White = 0L,
-                        Black = 0L,
-                        Bishops = 0L,
-                        Kings = 0L,
-                        Knights = 0L,
-                        Pawns = 0L,
-                        Queens = 0L,
-                        Rooks = 0L;
+    //see pieces enum
+    public static ulong[] BoardState =
+    {
+        0, //whites bitboard
+        0, //blacks bitboard
+        0, //bishops bitboard
+        0, //kings bitboard
+        0, //knights bitboard
+        0, //pawns bitboard
+        0, //queens bitboard
+        0  //rooks bitboard
+    };
 
     //caching the capturable squares of every piece type from every square on the board
     //to hopefully speed up move generation for minimax
@@ -89,39 +87,81 @@ public class BitBoards : MonoBehaviour
             StaticBitBoards = this;
         }
         DontDestroyOnLoad(this);
-
-        //pawn attacks is a 2d array as the direction differs based on piece color
-        PawnAttacks = new ulong[2, 64];
-        KnightAttacks = new ulong[64];
-        KingAttacks = new ulong[64];
-        BishopAttacks = new ulong[64];
-        RookAttacks = new ulong[64];
-        QueenAttacks = new ulong[64];
-
-        BoardState = new ulong[8];
     }
 
     void Start()
     {
+        PrintBitBoard(CalculateBishopAttacks(28,
+            BoardState[(int)Pieces.whites],
+            BoardState[(int)Pieces.blacks]),
+            "bishop attacks");
 
-        PrintBitBoard(SetBlockedSquares(true, BoardState), "blocked for white");
-        PrintBitBoard(CalculateKnightAttacks(28), "blocked for white");
+        PrintBitBoard(CalculateRookAttacks(28,
+            BoardState[(int)Pieces.whites],
+            BoardState[(int)Pieces.blacks]),
+            "rook attacks");
     }
-
-    ulong SetBlockedSquares(bool isWhite, ulong[] boardstate)
+    public ulong CalculateSelectedMove(int square, int pieceType, int pieceColor)
     {
-        ulong result = 0L;
+        bool isWhite = pieceColor == (int)Pieces.whites ? true : false;
+        ulong teamOccupancy = isWhite ? BoardState[(int)Pieces.whites] : BoardState[(int)Pieces.blacks];
+        ulong enemyOccupancy = isWhite ? BoardState[(int)Pieces.blacks] : BoardState[(int)Pieces.whites];
 
-        result = isWhite ? boardstate[0] : boardstate[1];
 
-        return result; 
+        if (pieceType == (int)Pieces.pawns)
+           return CalculatePawnAttacks(square, isWhite, teamOccupancy, enemyOccupancy);
+
+        if (pieceType == (int)Pieces.bishops)
+            return CalculateBishopAttacks(square, teamOccupancy, enemyOccupancy);
+
+        if (pieceType == (int)Pieces.queens)
+            return CalculateQueenAttacks(square, teamOccupancy, enemyOccupancy);
+
+        if (pieceType == (int)Pieces.kings)
+            return CalculateKingAttacks(square, teamOccupancy, enemyOccupancy);
+
+        if (pieceType == (int)Pieces.knights)
+            return CalculateKnightAttacks(square, teamOccupancy, enemyOccupancy);
+
+        if (pieceType == (int)Pieces.rooks)
+            return CalculateRookAttacks(square, teamOccupancy, enemyOccupancy);
+
+        return 0;
     }
 
+    public int GetPieceType(int square)
+    {
+        int pieceType = 0;
+
+        for (int i = 2; i < 8; i++)
+        {
+            if(GetBit(BoardState[i], square))
+            {
+                pieceType = i;
+            }
+        }
+
+        return pieceType;
+    }
+    public int GetPieceColor(int square)
+    {
+        int pieceColor = 0;
+
+        for (int i = 0; i < 2; i++)
+        {
+            if (GetBit(BoardState[i], square))
+            {
+                pieceColor = i;
+            }
+        }
+
+        return pieceColor;
+    }
 
     #region BitOperations
 
-        //returns value of a bit at the location of square
-        public bool GetBit(ulong bitBoard, int square)
+    //returns value of a bit at the location of square
+    public bool GetBit(ulong bitBoard, int square)
         {
             return ((shiftOn << square) & bitBoard) != 0;
         }
@@ -143,7 +183,7 @@ public class BitBoards : MonoBehaviour
         public int BitCounter(ulong bitBoard)
         {
             int count = 0;
-
+            
             //discard least significant bit until bitboard is cleared 
             while (bitBoard != 0)
             {
@@ -289,8 +329,6 @@ public class BitBoards : MonoBehaviour
             Debug.Log($"Elapsed time in ms to count bits in a bitboard {count} times: {elapsedTime}");
         }
 
-
-
         ulong[] GenerateRandomULongs(int length)
         {
             System.Random rand = new System.Random();
@@ -306,6 +344,7 @@ public class BitBoards : MonoBehaviour
     #endregion
 
     #region initialize bitboards
+
     //loops over every character in the fen string and updates the relevant bitboard to contain a piece
     public void SetBitBoardsFromFen()
         {
@@ -317,75 +356,75 @@ public class BitBoards : MonoBehaviour
                 switch (fenLayout[i])
                 {
                     case 'b':
-                        Black = SetBit(Black, square);
-                        Bishops = SetBit(Bishops, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.bishops] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'k':
-                        Black = SetBit(Black, square);
-                        Kings = SetBit(Kings, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.kings] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'n':
-                        Black = SetBit(Black, square);
-                        Knights = SetBit(Knights, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.knights] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'p':
-                        Black = SetBit(Black, square);
-                        Pawns = SetBit(Pawns, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.pawns] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'q':
-                        Black = SetBit(Black, square);
-                        Queens = SetBit(Queens, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.queens] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'r':
-                        Black = SetBit(Black, square);
-                        Rooks = SetBit(Rooks, square);
-                        square++;
+                    BoardState[(int)Pieces.blacks] |= shiftOn << square;
+                    BoardState[(int)Pieces.rooks] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'B':
-                        White = SetBit(White, square);
-                        Bishops = SetBit(Bishops, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.bishops] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'K':
-                        White = SetBit(White, square);
-                        Kings = SetBit(Kings, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.kings] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'N':
-                        White = SetBit(White, square);
-                        Knights = SetBit(Knights, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.knights] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'P':
-                        White = SetBit(White, square);
-                        Pawns = SetBit(Pawns, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.pawns] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'Q':
-                        White = SetBit(White, square);
-                        Queens = SetBit(Queens, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.queens] |= shiftOn << square;
+                    square++;
                         break;
 
                     case 'R':
-                        White = SetBit(White, square);
-                        Rooks = SetBit(Rooks, square);
-                        square++;
+                    BoardState[(int)Pieces.whites] |= shiftOn << square;
+                    BoardState[(int)Pieces.rooks] |= shiftOn << square;
+                    square++;
                         break;
 
                     case '1':
@@ -420,21 +459,16 @@ public class BitBoards : MonoBehaviour
                         square += 8;
                         break;
 
+                    case '/':
+                        break;
+
                     default:
+                    Debug.Log("invalid fen");
                         break;
                 }
-
-                //adds all of the bitboards into one array to use easier later
-                BoardState[(int)Pieces.whites] = White;
-                BoardState[(int)Pieces.blacks] = Black;
-                BoardState[(int)Pieces.bishops] = Bishops;
-                BoardState[(int)Pieces.kings] = Kings;
-                BoardState[(int)Pieces.knights] = Knights;
-                BoardState[(int)Pieces.pawns] = Pawns;
-                BoardState[(int)Pieces.queens] = Queens;
-                BoardState[(int)Pieces.rooks] = Rooks;
             }
         }
+    
     /*
     public void InitializeKingAttacks()
         {
@@ -481,30 +515,60 @@ public class BitBoards : MonoBehaviour
             }
         }
     */
+
     #endregion
 
-    #region calculate attack masks
-    ulong CalculateKingAttacks(int square)
-        {
+    #region calculate attack maps
+    ulong CalculateKingAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
+    {
             ulong attacks = 0L;
 
             //location to calculate attack from
             ulong bitBoard = 0L;
             bitBoard = SetBit(bitBoard, square);
 
-            if (((bitBoard >> 8)) != 0) attacks |= (bitBoard >> 8);
-            if (((bitBoard >> 7) & AColumn) != 0) attacks |= (bitBoard >> 7);
-            if (((bitBoard >> 1) & HColumn) != 0) attacks |= (bitBoard >> 1);
-            if (((bitBoard >> 9) & HColumn) != 0) attacks |= (bitBoard >> 9);
+        if ((((bitBoard >> 8)) != 0))
+        {
+            if (((shiftOn << square) & teamOccupancy) == 0) 
+            {  
+                attacks |= (bitBoard >> 8);
+            }
+        }
+        
+        if (((bitBoard >> 7) & AColumn) != 0)
+        {
+            if (((shiftOn << square) & teamOccupancy) == 0) 
+            { 
+                attacks |= (bitBoard >> 7);
+            }
+        }
 
-            if (((bitBoard << 8)) != 0) attacks |= (bitBoard << 8);
-            if (((bitBoard << 7) & HColumn) != 0) attacks |= (bitBoard << 7);
-            if (((bitBoard << 1) & AColumn) != 0) attacks |= (bitBoard << 1);
-            if (((bitBoard << 9) & AColumn) != 0) attacks |= (bitBoard << 9);
+        if (((bitBoard >> 1) & HColumn) != 0)
+        {
+            if (((shiftOn << square) & teamOccupancy) == 0) 
+            { 
+                attacks |= (bitBoard >> 1); 
+            }
+        }
+
+        if (((bitBoard >> 9) & HColumn) != 0)
+        {
+            if (((shiftOn << square) & teamOccupancy) == 0)
+            {
+                attacks |= (bitBoard >> 9);
+            }
+        }
+        attacks |= (bitBoard >> 9);
+
+        if (((bitBoard << 8)) != 0) attacks |= (bitBoard << 8);
+        if (((bitBoard << 7) & HColumn) != 0) attacks |= (bitBoard << 7);
+        if (((bitBoard << 1) & AColumn) != 0) attacks |= (bitBoard << 1);
+        if (((bitBoard << 9) & AColumn) != 0) attacks |= (bitBoard << 9);
 
             return attacks;
-        }
-    ulong CalculatePawnAttacks(bool isWhite, int square)
+    }
+
+    ulong CalculatePawnAttacks(int square, bool isWhite, ulong teamOccupancy, ulong enemyOccupancy)
         {
             ulong attacks = 0L;
 
@@ -529,7 +593,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-    ulong CalculateKnightAttacks(int square)
+    ulong CalculateKnightAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
         {
             ulong attacks = 0L;
 
@@ -552,7 +616,7 @@ public class BitBoards : MonoBehaviour
         }
 
 
-    ulong CalculateBishopAttacks(int square, ulong blockers)
+    ulong CalculateBishopAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
     {
         ulong attacks = 0L;
 
@@ -562,30 +626,38 @@ public class BitBoards : MonoBehaviour
         int targetRank = square / 8;
         int targetFile = square % 8;
 
+        //loops until we hit every diagonal tile per direction until the end of the bitboard
         for (rank = targetRank + 1, file = targetFile + 1; rank <= 7 && file <= 7; rank++, file++)
         {
+            //break before setting if team, so we cant capture
+            if (((shiftOn << (rank * 8 + file)) & teamOccupancy) != 0) break;
+            //set bit on
             attacks |= (shiftOn << (rank * 8 + file));
-            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+            //break after setting if enemy, so we can capture
+            if (((shiftOn << (rank * 8 + file)) & enemyOccupancy) != 0) break;
         }
         for (rank = targetRank - 1, file = targetFile + 1; rank >= 0 && file <= 7; rank--, file++)
         {
+            if (((shiftOn << (rank * 8 + file)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (rank * 8 + file));
-            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+            if (((shiftOn << (rank * 8 + file)) & enemyOccupancy) != 0) break;
         }
         for (rank = targetRank + 1, file = targetFile - 1; rank <= 7 && file >= 0; rank++, file--)
         {
+            if (((shiftOn << (rank * 8 + file)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (rank * 8 + file));
-            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+            if (((shiftOn << (rank * 8 + file)) & enemyOccupancy) != 0) break;
         }
         for (rank = targetRank - 1, file = targetFile - 1; rank >= 0 && file >= 0; rank--, file--)
         {
+            if (((shiftOn << (rank * 8 + file)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (rank * 8 + file));
-            if (((shiftOn << (rank * 8 + file)) & blockers) != 0) break;
+            if (((shiftOn << (rank * 8 + file)) & enemyOccupancy) != 0) break;
         }
 
         return attacks;
     }
-    ulong CalculateRookAttacks(int square, ulong blockers)
+    ulong CalculateRookAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
     {
         ulong attacks = 0L;
 
@@ -595,26 +667,42 @@ public class BitBoards : MonoBehaviour
         int targetRank = square / 8;
         int targetFile = square % 8;
 
+        //same as above but simpler as we only have to move in straight lines
+        //important to change the checks based on direction this time though(vertical, horizontal)
         for (rank = targetRank + 1; rank <= 7; rank++)
         {
+            if (((shiftOn << (rank * 8 + targetFile)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (rank * 8 + targetFile));
-            if (((shiftOn << (rank * 8 + targetFile)) & blockers) != 0) break;
+            if (((shiftOn << (rank * 8 + targetFile)) & enemyOccupancy) != 0) break;
         }
         for (rank = targetRank - 1; rank >= 0; rank--)
         {
+            if (((shiftOn << (rank * 8 + targetFile)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (rank * 8 + targetFile));
-            if (((shiftOn << (rank * 8 + targetFile)) & blockers) != 0) break;
+            if (((shiftOn << (rank * 8 + targetFile)) & enemyOccupancy) != 0) break;
         }
         for (file = targetFile + 1; file <= 7; file++)
         {
+            if (((shiftOn << (targetRank * 8 + file)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (targetRank * 8 + file));
-            if (((shiftOn << (targetRank * 8 + file)) & blockers) != 0) break;
+            if (((shiftOn << (targetRank * 8 + file)) & enemyOccupancy) != 0) break;
         }
         for (file = targetFile - 1; file >= 0; file--)
         {
+            if (((shiftOn << (targetRank * 8 + file)) & teamOccupancy) != 0) break;
             attacks |= (shiftOn << (targetRank * 8 + file));
-            if (((shiftOn << (targetRank * 8 + file)) & blockers) != 0) break;
+            if (((shiftOn << (targetRank * 8 + file)) & enemyOccupancy) != 0) break;
         }
+
+        return attacks;
+    }
+
+    ulong CalculateQueenAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
+    {
+        ulong attacks = 0L;
+
+        attacks |= CalculateBishopAttacks(square, teamOccupancy, enemyOccupancy);
+        attacks |= CalculateRookAttacks(square, teamOccupancy, enemyOccupancy);
 
         return attacks;
     }
