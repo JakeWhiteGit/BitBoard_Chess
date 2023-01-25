@@ -33,8 +33,10 @@ public class GameManager : MonoBehaviour
 
         InitializeBoardGUI();
 
+        bitBoards.StoreMoves();
+
         ChoosePlayerColor();
-        RotateCamera();
+       // RotateCamera();
     }
 
     private void InitializeBoardGUI()

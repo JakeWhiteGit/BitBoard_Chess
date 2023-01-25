@@ -36,6 +36,9 @@ public class BitBoards : MonoBehaviour
     public static ulong[] RookAttacks;
     public static ulong[] QueenAttacks;
 
+    public static List<ulong> WhiteMoves;
+    public static List<ulong> BlackMoves;
+
     //constants to show a fully flipped board apart from the specified columns
     //used for checking if a move from one side wraps over to the other on the visual bitboard
     public readonly static ulong AColumn = 18374403900871474942L;
@@ -87,26 +90,56 @@ public class BitBoards : MonoBehaviour
             StaticBitBoards = this;
         }
         DontDestroyOnLoad(this);
+
+        WhiteMoves = new List<ulong>();
+        BlackMoves = new List<ulong>();
     }
 
     void Start()
     {
-        PrintBitBoard(CalculateBishopAttacks(28,
-            BoardState[(int)Pieces.whites],
-            BoardState[(int)Pieces.blacks]),
-            "bishop attacks");
-
-        PrintBitBoard(CalculateRookAttacks(28,
-            BoardState[(int)Pieces.whites],
-            BoardState[(int)Pieces.blacks]),
-            "rook attacks");
     }
+
+    public void StoreMoves()
+    {
+        for (int i = 0; i < 64; i++)
+        {
+            bool IsWhite = GetPieceColor(i) == 0;
+
+            ulong move = CalculateSelectedMove(i, GetPieceType(i), GetPieceColor(i));
+
+            if (move != 0 && IsWhite)
+            {
+                WhiteMoves.Add(move);
+            }
+            if(move != 0 && !IsWhite)
+            {
+                BlackMoves.Add(move);
+            }
+        }
+
+        int count = 0;
+        int totalMoves = 0;
+        foreach (var move in WhiteMoves)
+        {
+            count++;
+            PrintBitBoard(move, $"{count} white");
+            totalMoves += BitCounter(move);
+        }
+        count = 0;
+        foreach (var move in BlackMoves)
+        {
+            count++;
+            PrintBitBoard(move, $"{count} black");
+            totalMoves += BitCounter(move);
+        }
+        //Debug.Log($"{totalMoves} total moves");
+    }
+
     public ulong CalculateSelectedMove(int square, int pieceType, int pieceColor)
     {
         bool isWhite = pieceColor == (int)Pieces.whites ? true : false;
         ulong teamOccupancy = isWhite ? BoardState[(int)Pieces.whites] : BoardState[(int)Pieces.blacks];
         ulong enemyOccupancy = isWhite ? BoardState[(int)Pieces.blacks] : BoardState[(int)Pieces.whites];
-
 
         if (pieceType == (int)Pieces.pawns)
            return CalculatePawnAttacks(square, isWhite, teamOccupancy, enemyOccupancy);
@@ -523,68 +556,79 @@ public class BitBoards : MonoBehaviour
     {
         ulong attacks = 0L;
 
-        ulong bitBoard = 0L;
-        bitBoard = SetBit(bitBoard, square);
+        ulong kingLocation = 0L;
+        kingLocation = SetBit(kingLocation, square);
 
-        if ((((bitBoard >> 8)) != 0) && (((bitBoard >> 8) & teamOccupancy) == 0)) 
-            attacks |= (bitBoard >> 8);
-        if ((((bitBoard >> 7) & AColumn) != 0 && (((bitBoard >> 7) & teamOccupancy) == 0)))
-            attacks |= (bitBoard >> 7);
-        if ((((bitBoard >> 1) & HColumn) != 0 && (((bitBoard >> 1) & teamOccupancy) == 0)))
-            attacks |= (bitBoard >> 1); 
-        if ((((bitBoard >> 9) & HColumn) != 0 && (((bitBoard >> 9) & teamOccupancy) == 0)))
-            attacks |= (bitBoard >> 9);
-        if ((((bitBoard << 8)) != 0) && (((bitBoard << 8) & teamOccupancy) == 0))
-            attacks |= (bitBoard << 8);
-        if ((((bitBoard << 7) & HColumn) != 0 && (((bitBoard << 7) & teamOccupancy) == 0))) 
-            attacks |= (bitBoard << 7);
-        if ((((bitBoard << 1) & AColumn) != 0 && (((bitBoard << 1) & teamOccupancy) == 0))) 
-            attacks |= (bitBoard << 1);
-        if ((((bitBoard << 9) & AColumn) != 0 && (((bitBoard << 9) & teamOccupancy) == 0))) 
-            attacks |= (bitBoard << 9);
+        if ((((kingLocation >> 8)) != 0) && (((kingLocation >> 8) & teamOccupancy) == 0)) 
+            attacks |= (kingLocation >> 8);
+        if ((((kingLocation >> 7) & AColumn) != 0 && (((kingLocation >> 7) & teamOccupancy) == 0)))
+            attacks |= (kingLocation >> 7);
+        if ((((kingLocation >> 1) & HColumn) != 0 && (((kingLocation >> 1) & teamOccupancy) == 0)))
+            attacks |= (kingLocation >> 1); 
+        if ((((kingLocation >> 9) & HColumn) != 0 && (((kingLocation >> 9) & teamOccupancy) == 0)))
+            attacks |= (kingLocation >> 9);
+        if ((((kingLocation << 8)) != 0) && (((kingLocation << 8) & teamOccupancy) == 0))
+            attacks |= (kingLocation << 8);
+        if ((((kingLocation << 7) & HColumn) != 0 && (((kingLocation << 7) & teamOccupancy) == 0))) 
+            attacks |= (kingLocation << 7);
+        if ((((kingLocation << 1) & AColumn) != 0 && (((kingLocation << 1) & teamOccupancy) == 0))) 
+            attacks |= (kingLocation << 1);
+        if ((((kingLocation << 9) & AColumn) != 0 && (((kingLocation << 9) & teamOccupancy) == 0))) 
+            attacks |= (kingLocation << 9);
 
             return attacks;
     }
-
     ulong CalculatePawnAttacks(int square, bool isWhite, ulong teamOccupancy, ulong enemyOccupancy)
     {
         ulong attacks = 0L;
 
         //location to calculate attack from
-        ulong bitBoard = 0L;
-        bitBoard = SetBit(bitBoard, square);
+        ulong pawnLocation = 0L;
+        pawnLocation = SetBit(pawnLocation, square);
 
         //if white pawns
         if (isWhite is true)
         {
-            if ((((bitBoard >> 8)) != 0) && (((bitBoard >> 8) & teamOccupancy) == 0))
-                attacks |= (bitBoard >> 8);
+            if ((((pawnLocation >> 8)) != 0) &&
+                (((pawnLocation >> 8) & teamOccupancy) == 0) &&
+                (((pawnLocation >> 8) & enemyOccupancy) == 0))
+                attacks |= (pawnLocation >> 8);
 
-            //  attack is on board        AND       attack has no team piece           AND is on rank 6
-            if ((((bitBoard >> 16)) != 0) && (((bitBoard >> 16) & teamOccupancy) == 0) && square / 8 == 6)
+            //  attack is on board AND attack has no team piece AND no enemy piece AND is on rank 7
+            if ((((pawnLocation >> 16)) != 0) &&
+                (((pawnLocation >> 16) & teamOccupancy) == 0) &&
+                (((pawnLocation >> 16) & enemyOccupancy) == 0) &&
+                square / 8 == 6)
                 //set attack on at square
-                attacks |= (bitBoard >> 16);
+                attacks |= (pawnLocation >> 16);
 
             //--Captures--
             //additional check from above to ensure diagonal moves dont wrap around the board
-            if ((((bitBoard >> 7) & HColumn) != 0) && (((bitBoard >> 7) & enemyOccupancy) != 0))
-                attacks |= (bitBoard >> 7);
-            if ((((bitBoard >> 9) & AColumn) != 0) && (((bitBoard >> 9) & enemyOccupancy) != 0))
-                attacks |= (bitBoard >> 9);
+            if ((((pawnLocation >> 7) & AColumn) != 0) && (((pawnLocation >> 7) & enemyOccupancy) != 0))
+                attacks |= (pawnLocation >> 7);
+            if ((((pawnLocation >> 9) & HColumn) != 0) && (((pawnLocation >> 9) & enemyOccupancy) != 0))
+                attacks |= (pawnLocation >> 9);
         }
+
         //if black pawns
         else
         {
-            if ((((bitBoard << 8)) != 0) && (((bitBoard << 8) & teamOccupancy) == 0)) 
-                attacks |= (bitBoard << 8);
-            if ((((bitBoard << 16)) != 0) && (((bitBoard << 16) & teamOccupancy) == 0) && square / 8 == 1)
-                attacks |= (bitBoard << 16);
+            if ((((pawnLocation << 8)) != 0) &&
+                (((pawnLocation << 8) & teamOccupancy) == 0) &&
+                (((pawnLocation << 8) & enemyOccupancy) == 0)) 
+                attacks |= (pawnLocation << 8);
+
+            if ((((pawnLocation << 16)) != 0) &&
+                (((pawnLocation << 16) & teamOccupancy) == 0) &&
+                (((pawnLocation << 16) & enemyOccupancy) == 0)
+                && square / 8 == 1)
+                attacks |= (pawnLocation << 16);
             
             //--Captures--
-            if ((((bitBoard << 7) & HColumn) != 0) && (((bitBoard << 7) & enemyOccupancy) != 0)) 
-                attacks |= (bitBoard << 7);
-            if ((((bitBoard << 9) & AColumn) != 0) && (((bitBoard << 9) & enemyOccupancy) != 0)) 
-                attacks |= (bitBoard << 9);
+            if ((((pawnLocation << 7) & HColumn) != 0) && (((pawnLocation << 7) & enemyOccupancy) != 0)) 
+                attacks |= (pawnLocation << 7);
+            if ((((pawnLocation << 9) & AColumn) != 0) && (((pawnLocation << 9) & enemyOccupancy) != 0)) 
+                attacks |= (pawnLocation << 9);
         }
 
         return attacks;
@@ -594,31 +638,29 @@ public class BitBoards : MonoBehaviour
         ulong attacks = 0L;
 
         //location to calculate attack from
-        ulong bitBoard = 0L;
-        bitBoard = SetBit(bitBoard, square);
+        ulong knightLocation = 0L;
+        knightLocation = SetBit(knightLocation, square);
 
-        if (((bitBoard >> 17) & HColumn) != 0 && (((bitBoard >> 17) & teamOccupancy) == 0))
-            attacks |= (bitBoard >> 17);
-        if (((bitBoard >> 15) & AColumn) != 0 && (((bitBoard >> 15) & teamOccupancy) == 0))
-            attacks |= (bitBoard >> 15);
-        if (((bitBoard >> 10) & GHColumn) != 0 && (((bitBoard >> 10) & teamOccupancy) == 0))
-            attacks |= (bitBoard >> 10);
-        if (((bitBoard >> 6) & ABColumn) != 0 && (((bitBoard >> 6) & teamOccupancy) == 0))
-            attacks |= (bitBoard >> 6);
+        if (((knightLocation >> 17) & HColumn) != 0 && (((knightLocation >> 17) & teamOccupancy) == 0))
+            attacks |= (knightLocation >> 17);
+        if (((knightLocation >> 15) & AColumn) != 0 && (((knightLocation >> 15) & teamOccupancy) == 0))
+            attacks |= (knightLocation >> 15);
+        if (((knightLocation >> 10) & GHColumn) != 0 && (((knightLocation >> 10) & teamOccupancy) == 0))
+            attacks |= (knightLocation >> 10);
+        if (((knightLocation >> 6) & ABColumn) != 0 && (((knightLocation >> 6) & teamOccupancy) == 0))
+            attacks |= (knightLocation >> 6);
 
-        if (((bitBoard << 17) & AColumn) != 0 && (((bitBoard << 17) & teamOccupancy) == 0))
-            attacks |= (bitBoard << 17);
-        if (((bitBoard << 15) & HColumn) != 0 && (((bitBoard << 15) & teamOccupancy) == 0))
-            attacks |= (bitBoard << 15);
-        if (((bitBoard << 10) & ABColumn) != 0 && (((bitBoard << 10) & teamOccupancy) == 0))
-            attacks |= (bitBoard << 10);
-        if (((bitBoard << 6) & GHColumn) != 0 && (((bitBoard << 6) & teamOccupancy) == 0))
-            attacks |= (bitBoard << 6);
+        if (((knightLocation << 17) & AColumn) != 0 && (((knightLocation << 17) & teamOccupancy) == 0))
+            attacks |= (knightLocation << 17);
+        if (((knightLocation << 15) & HColumn) != 0 && (((knightLocation << 15) & teamOccupancy) == 0))
+            attacks |= (knightLocation << 15);
+        if (((knightLocation << 10) & ABColumn) != 0 && (((knightLocation << 10) & teamOccupancy) == 0))
+            attacks |= (knightLocation << 10);
+        if (((knightLocation << 6) & GHColumn) != 0 && (((knightLocation << 6) & teamOccupancy) == 0))
+            attacks |= (knightLocation << 6);
 
         return attacks;
     }
-
-
     ulong CalculateBishopAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
     {
         ulong attacks = 0L;
@@ -699,7 +741,6 @@ public class BitBoards : MonoBehaviour
 
         return attacks;
     }
-
     ulong CalculateQueenAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
     {
         ulong attacks = 0L;

@@ -199,7 +199,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12ef9937365d31146a88298923d06965, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fen: rnbqkbnr/pppppppp/8/8/P6P/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+  fen: r1Q3R1/p1b5/1BK1b1P1/2P3r1/4N1B1/p1nnk2N/1P3p2/6qR w - - 0 1
 --- !u!4 &359916911
 Transform:
   m_ObjectHideFlags: 0
