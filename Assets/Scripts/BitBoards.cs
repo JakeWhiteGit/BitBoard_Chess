@@ -16,6 +16,9 @@ public class BitBoards : MonoBehaviour
 
     public static ulong[] BoardState;
 
+    public static ulong BlockedForWhite;
+    public static ulong BlockedForBlack;
+
     //ulong types binary values being used to represent piece locations
     public static ulong White = 0L,
                         Black = 0L,
@@ -35,40 +38,12 @@ public class BitBoards : MonoBehaviour
     public static ulong[] RookAttacks;
     public static ulong[] QueenAttacks;
 
-    public static ulong[] Random;
-
-    uint seed = 1804289383;
-
     //constants to show a fully flipped board apart from the specified columns
     //used for checking if a move from one side wraps over to the other on the visual bitboard
     public readonly static ulong AColumn = 18374403900871474942L;
     public readonly static ulong HColumn = 9187201950435737471L;
     public readonly static ulong ABColumn = 18229723555195321596L;
     public readonly static ulong GHColumn = 4557430888798830399L;
-
-    public static readonly ulong[] BishopOccupancyMaskCount =
-    {
-        6, 5, 5, 5, 5, 5, 5, 6,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 7, 7, 7, 7, 5, 5,
-        5, 5, 7, 9, 9, 7, 5, 5,
-        5, 5, 7, 9, 9, 7, 5, 5,
-        5, 5, 7, 7, 7, 7, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        6, 5, 5, 5, 5, 5, 5, 6
-    }; 
-    public static readonly ulong[] RookOccupancyMaskCount =
-    {
-        12, 11, 11, 11, 11, 11, 11, 12,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        11, 10, 10, 10, 10, 10, 10, 11,
-        12, 11, 11, 11, 11, 11, 11, 12,
-    };
-
 
     //value to shift bit with
     readonly ulong shiftOn = 1L;
@@ -128,92 +103,20 @@ public class BitBoards : MonoBehaviour
 
     void Start()
     {
-        ulong block = 0L;
-        
-        block = SetBit(block, (int)Squares.f6);
-        block = SetBit(block, (int)Squares.b2);
-        block = SetBit(block, (int)Squares.d6);
-        block = SetBit(block, (int)Squares.e6);
-        block = SetBit(block, (int)Squares.d2);
-        block = SetBit(block, (int)Squares.g4);
-        block = SetBit(block, (int)Squares.b4);
-        
 
-        PrintBitBoard(block, "block");
-
-        PrintBitBoard(CalculateBishopAttacksRunTime(28, block), "bishop attacks");
-        PrintBitBoard(CalculateRookAttacksRunTime((int)Squares.d4, block), "rook attacks");
+        PrintBitBoard(SetBlockedSquares(true, BoardState), "blocked for white");
+        PrintBitBoard(CalculateKnightAttacks(28), "blocked for white");
     }
 
-    ulong FindMagicNumber(int square, int relevantBits, int bishop)
+    ulong SetBlockedSquares(bool isWhite, ulong[] boardstate)
     {
-        ulong[] occupancies = new ulong[4096];
-        ulong[] attacks = new ulong[4096];
-        ulong[] usedAttacks = new ulong[4096];
-        ulong attackMask = bishop == 1 ? CalculateBishopAttacks(square) : CalculateRookAttacks(square);
+        ulong result = 0L;
 
-        int occupancyIndeces = 1 << relevantBits;
+        result = isWhite ? boardstate[0] : boardstate[1];
 
-        for (int i = 0; i < occupancyIndeces; i++)
-        {
-            occupancies[i] = SetOccupancy(i, relevantBits, attackMask);
-        }
-        //placeholder
-        return occupancies[0];
+        return result; 
     }
 
-    #region RandomMagicGeneration
-
-    //creating my own pseudo random to ensure results
-    //of random numbers are same cross platform/architecture
-    uint RandomNumberGen32()
-    {
-        uint number = seed;
-        number ^= number << 13;
-        number ^= number >> 17;
-        number ^= number << 5;
-
-        seed = number;
-
-        return number;
-    }
-
-    ulong RandomNumberGen64()
-    {
-        ulong n1, n2, n3, n4;
-        n1 = (RandomNumberGen32()) & 0xFFFF;
-        n2 = (RandomNumberGen32()) & 0xFFFF;
-        n3 = (RandomNumberGen32()) & 0xFFFF;
-        n4 = (RandomNumberGen32()) & 0xFFFF;
-
-        return n1 | (n2 << 16) | (n3 << 32) | (n4 << 48);
-    }
-    
-    ulong MagicNumberCandidate()
-    {
-        ulong value = RandomNumberGen64() & RandomNumberGen64() & RandomNumberGen64();
-        return value;
-    }
-
-    ulong SetOccupancy(int index, int bitsInMask, UInt64 attackMask)
-    {
-        ulong occupancy = 0L;
-
-        for (int count = 0; count < bitsInMask; count++)
-        {
-            // returns location of the first bit that is on in a bitboard
-            int square = ReturnFirstBitIndex(attackMask);
-            attackMask = RemoveBit(attackMask, square);
-
-            if ((index & (1 << count)) != 0)
-            {
-                //set occupancy table bit on at square
-                occupancy |= (shiftOn << square);
-            }
-        }
-        return occupancy;
-    }
-    #endregion
 
     #region BitOperations
 
@@ -235,6 +138,7 @@ public class BitBoards : MonoBehaviour
             //                   is bit at square on?                  turn off         do nothing
             return bitBoard ^= ((shiftOn << square) & bitBoard) != 0 ? (shiftOn << square) : 0;
         }
+
         // returns the number of on bits on a bitboard Brian Kernighan's algorithm
         public int BitCounter(ulong bitBoard)
         {
@@ -531,6 +435,7 @@ public class BitBoards : MonoBehaviour
                 BoardState[(int)Pieces.rooks] = Rooks;
             }
         }
+    /*
     public void InitializeKingAttacks()
         {
             for (int square = 0; square < 64; square++)
@@ -542,8 +447,8 @@ public class BitBoards : MonoBehaviour
         {
             for (int square = 0; square < 64; square++)
             {
-                PawnAttacks[(int)PieceColor.white, square] = CalculatePawnAttacks(PieceColor.white, square);
-                PawnAttacks[(int)PieceColor.black, square] = CalculatePawnAttacks(PieceColor.black, square);
+                PawnAttacks[(int)PieceColor.white, square] = CalculatePawnAttacks(true, square);
+                PawnAttacks[(int)PieceColor.black, square] = CalculatePawnAttacks(false, square);
             }
         }
     public void InitializeKnightAttacks()
@@ -564,7 +469,7 @@ public class BitBoards : MonoBehaviour
         {
             for (int square = 0; square < 64; square++)
             {
-                RookAttacks[square] = CalculateRookAttacks(square);
+                RookAttacks[square] = CalculateRookAttacks(square, SetBlockedSquares();
             }
         }
     public void InitializeQueenAttacks()
@@ -575,6 +480,7 @@ public class BitBoards : MonoBehaviour
                 QueenAttacks[square] |= BishopAttacks[square];
             }
         }
+    */
     #endregion
 
     #region calculate attack masks
@@ -598,7 +504,7 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-    ulong CalculatePawnAttacks(PieceColor color, int square)
+    ulong CalculatePawnAttacks(bool isWhite, int square)
         {
             ulong attacks = 0L;
 
@@ -607,7 +513,7 @@ public class BitBoards : MonoBehaviour
             bitBoard = SetBit(bitBoard, square);
 
             //if white pawns
-            if (color == 0)
+            if (isWhite is true)
             {
                 //check to see if the north east attack would land on the A column 
                 //for this to be possible it would mean the attack would have wrapped around
@@ -644,66 +550,9 @@ public class BitBoards : MonoBehaviour
 
             return attacks;
         }
-    ulong CalculateBishopAttacks(int square)
-        {
-            ulong attacks = 0L;
 
-            int rank;
-            int file;
 
-            int targetRank = square / 8;
-            int targetFile = square % 8;
-
-            for (rank = targetRank + 1, file = targetFile + 1; rank <= 6 && file <= 6; rank++, file++)
-            {
-                attacks |= (shiftOn << (rank * 8 + file));
-            }
-            for (rank = targetRank - 1, file = targetFile + 1; rank >= 1 && file <= 6; rank--, file++)
-            {
-                attacks |= (shiftOn << (rank * 8 + file));
-            }
-            for (rank = targetRank + 1, file = targetFile - 1; rank <= 6 && file >= 1; rank++, file--)
-            {
-                attacks |= (shiftOn << (rank * 8 + file));
-            }
-            for (rank = targetRank - 1, file = targetFile - 1; rank >= 1 && file >= 1; rank--, file--)
-            {
-                attacks |= (shiftOn << (rank * 8 + file));
-            }
-
-            return attacks;
-        }
-    ulong CalculateRookAttacks(int square)
-        {
-            ulong attacks = 0L;
-
-            int rank;
-            int file;
-
-            int targetRank = square / 8;
-            int targetFile = square % 8;
-
-            for (rank = targetRank + 1; rank <= 6; rank++)
-            {
-                attacks |= (shiftOn << (rank * 8 + targetFile));
-            }
-            for (rank = targetRank - 1; rank >= 1; rank--)
-            {
-                attacks |= (shiftOn << (rank * 8 + targetFile));
-            }
-            for (file = targetFile + 1; file <= 6; file++)
-            {
-                attacks |= (shiftOn << (targetRank * 8 + file));
-            }
-            for (file = targetFile - 1; file >= 1; file--)
-            {
-                attacks |= (shiftOn << (targetRank * 8 + file));
-            }
-
-            return attacks;
-        }
-
-    ulong CalculateBishopAttacksRunTime(int square, ulong blockers)
+    ulong CalculateBishopAttacks(int square, ulong blockers)
     {
         ulong attacks = 0L;
 
@@ -736,7 +585,7 @@ public class BitBoards : MonoBehaviour
 
         return attacks;
     }
-    ulong CalculateRookAttacksRunTime(int square, ulong blockers)
+    ulong CalculateRookAttacks(int square, ulong blockers)
     {
         ulong attacks = 0L;
 

@@ -153,6 +153,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   board: {fileID: 1744118968}
+  bitBoards: {fileID: 1806403603}
   cam: {fileID: 519420031}
 --- !u!4 &100843687
 Transform:

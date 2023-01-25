@@ -47,12 +47,14 @@ public class GameManager : MonoBehaviour
     private void InitializeBitBoards()
     {
         bitBoards.SetBitBoardsFromFen();
+    /*
         bitBoards.InitializePawnAttacks();
         bitBoards.InitializeKnightAttacks();
         bitBoards.InitializeKingAttacks();
         bitBoards.InitializeBishopAttacks();
         bitBoards.InitializeRookAttacks();
         bitBoards.InitializeQueenAttacks();
+    */
     }
 
     private void ChoosePlayerColor()
