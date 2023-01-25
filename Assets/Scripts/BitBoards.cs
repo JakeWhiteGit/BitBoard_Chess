@@ -521,99 +521,102 @@ public class BitBoards : MonoBehaviour
     #region calculate attack maps
     ulong CalculateKingAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
     {
-            ulong attacks = 0L;
+        ulong attacks = 0L;
 
-            //location to calculate attack from
-            ulong bitBoard = 0L;
-            bitBoard = SetBit(bitBoard, square);
+        ulong bitBoard = 0L;
+        bitBoard = SetBit(bitBoard, square);
 
-        if ((((bitBoard >> 8)) != 0))
-        {
-            if (((shiftOn << square) & teamOccupancy) == 0) 
-            {  
-                attacks |= (bitBoard >> 8);
-            }
-        }
-        
-        if (((bitBoard >> 7) & AColumn) != 0)
-        {
-            if (((shiftOn << square) & teamOccupancy) == 0) 
-            { 
-                attacks |= (bitBoard >> 7);
-            }
-        }
-
-        if (((bitBoard >> 1) & HColumn) != 0)
-        {
-            if (((shiftOn << square) & teamOccupancy) == 0) 
-            { 
-                attacks |= (bitBoard >> 1); 
-            }
-        }
-
-        if (((bitBoard >> 9) & HColumn) != 0)
-        {
-            if (((shiftOn << square) & teamOccupancy) == 0)
-            {
-                attacks |= (bitBoard >> 9);
-            }
-        }
-        attacks |= (bitBoard >> 9);
-
-        if (((bitBoard << 8)) != 0) attacks |= (bitBoard << 8);
-        if (((bitBoard << 7) & HColumn) != 0) attacks |= (bitBoard << 7);
-        if (((bitBoard << 1) & AColumn) != 0) attacks |= (bitBoard << 1);
-        if (((bitBoard << 9) & AColumn) != 0) attacks |= (bitBoard << 9);
+        if ((((bitBoard >> 8)) != 0) && (((bitBoard >> 8) & teamOccupancy) == 0)) 
+            attacks |= (bitBoard >> 8);
+        if ((((bitBoard >> 7) & AColumn) != 0 && (((bitBoard >> 7) & teamOccupancy) == 0)))
+            attacks |= (bitBoard >> 7);
+        if ((((bitBoard >> 1) & HColumn) != 0 && (((bitBoard >> 1) & teamOccupancy) == 0)))
+            attacks |= (bitBoard >> 1); 
+        if ((((bitBoard >> 9) & HColumn) != 0 && (((bitBoard >> 9) & teamOccupancy) == 0)))
+            attacks |= (bitBoard >> 9);
+        if ((((bitBoard << 8)) != 0) && (((bitBoard << 8) & teamOccupancy) == 0))
+            attacks |= (bitBoard << 8);
+        if ((((bitBoard << 7) & HColumn) != 0 && (((bitBoard << 7) & teamOccupancy) == 0))) 
+            attacks |= (bitBoard << 7);
+        if ((((bitBoard << 1) & AColumn) != 0 && (((bitBoard << 1) & teamOccupancy) == 0))) 
+            attacks |= (bitBoard << 1);
+        if ((((bitBoard << 9) & AColumn) != 0 && (((bitBoard << 9) & teamOccupancy) == 0))) 
+            attacks |= (bitBoard << 9);
 
             return attacks;
     }
 
     ulong CalculatePawnAttacks(int square, bool isWhite, ulong teamOccupancy, ulong enemyOccupancy)
+    {
+        ulong attacks = 0L;
+
+        //location to calculate attack from
+        ulong bitBoard = 0L;
+        bitBoard = SetBit(bitBoard, square);
+
+        //if white pawns
+        if (isWhite is true)
         {
-            ulong attacks = 0L;
+            if ((((bitBoard >> 8)) != 0) && (((bitBoard >> 8) & teamOccupancy) == 0))
+                attacks |= (bitBoard >> 8);
 
-            //location to calculate attack from
-            ulong bitBoard = 0L;
-            bitBoard = SetBit(bitBoard, square);
+            //  attack is on board        AND       attack has no team piece           AND is on rank 6
+            if ((((bitBoard >> 16)) != 0) && (((bitBoard >> 16) & teamOccupancy) == 0) && square / 8 == 6)
+                //set attack on at square
+                attacks |= (bitBoard >> 16);
 
-            //if white pawns
-            if (isWhite is true)
-            {
-                //check to see if the north east attack would land on the A column 
-                //for this to be possible it would mean the attack would have wrapped around
-                if (((bitBoard >> 7) & AColumn) != 0) attacks |= (bitBoard >> 7);
-                if (((bitBoard >> 9) & HColumn) != 0) attacks |= (bitBoard >> 9);
-            }
-            //if black pawns
-            else
-            {
-                if (((bitBoard << 7) & HColumn) != 0) attacks |= (bitBoard << 7);
-                if (((bitBoard << 9) & AColumn) != 0) attacks |= (bitBoard << 9);
-            }
-
-            return attacks;
+            //--Captures--
+            //additional check from above to ensure diagonal moves dont wrap around the board
+            if ((((bitBoard >> 7) & HColumn) != 0) && (((bitBoard >> 7) & enemyOccupancy) != 0))
+                attacks |= (bitBoard >> 7);
+            if ((((bitBoard >> 9) & AColumn) != 0) && (((bitBoard >> 9) & enemyOccupancy) != 0))
+                attacks |= (bitBoard >> 9);
         }
+        //if black pawns
+        else
+        {
+            if ((((bitBoard << 8)) != 0) && (((bitBoard << 8) & teamOccupancy) == 0)) 
+                attacks |= (bitBoard << 8);
+            if ((((bitBoard << 16)) != 0) && (((bitBoard << 16) & teamOccupancy) == 0) && square / 8 == 1)
+                attacks |= (bitBoard << 16);
+            
+            //--Captures--
+            if ((((bitBoard << 7) & HColumn) != 0) && (((bitBoard << 7) & enemyOccupancy) != 0)) 
+                attacks |= (bitBoard << 7);
+            if ((((bitBoard << 9) & AColumn) != 0) && (((bitBoard << 9) & enemyOccupancy) != 0)) 
+                attacks |= (bitBoard << 9);
+        }
+
+        return attacks;
+    }
     ulong CalculateKnightAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)
-        {
-            ulong attacks = 0L;
+    {
+        ulong attacks = 0L;
 
-            //location to calculate attack from
-            ulong bitBoard = 0L;
-            bitBoard = SetBit(bitBoard, square);
+        //location to calculate attack from
+        ulong bitBoard = 0L;
+        bitBoard = SetBit(bitBoard, square);
 
-            if (((bitBoard >> 17) & HColumn) != 0) attacks |= (bitBoard >> 17);
-            if (((bitBoard >> 15) & AColumn) != 0) attacks |= (bitBoard >> 15);
-            if (((bitBoard >> 10) & GHColumn) != 0) attacks |= (bitBoard >> 10);
-            if (((bitBoard >> 6) & ABColumn) != 0) attacks |= (bitBoard >> 6);
+        if (((bitBoard >> 17) & HColumn) != 0 && (((bitBoard >> 17) & teamOccupancy) == 0))
+            attacks |= (bitBoard >> 17);
+        if (((bitBoard >> 15) & AColumn) != 0 && (((bitBoard >> 15) & teamOccupancy) == 0))
+            attacks |= (bitBoard >> 15);
+        if (((bitBoard >> 10) & GHColumn) != 0 && (((bitBoard >> 10) & teamOccupancy) == 0))
+            attacks |= (bitBoard >> 10);
+        if (((bitBoard >> 6) & ABColumn) != 0 && (((bitBoard >> 6) & teamOccupancy) == 0))
+            attacks |= (bitBoard >> 6);
 
-            if (((bitBoard << 17) & AColumn) != 0) attacks |= (bitBoard << 17);
-            if (((bitBoard << 15) & HColumn) != 0) attacks |= (bitBoard << 15);
-            if (((bitBoard << 10) & ABColumn) != 0) attacks |= (bitBoard << 10);
-            if (((bitBoard << 6) & GHColumn) != 0) attacks |= (bitBoard << 6);
+        if (((bitBoard << 17) & AColumn) != 0 && (((bitBoard << 17) & teamOccupancy) == 0))
+            attacks |= (bitBoard << 17);
+        if (((bitBoard << 15) & HColumn) != 0 && (((bitBoard << 15) & teamOccupancy) == 0))
+            attacks |= (bitBoard << 15);
+        if (((bitBoard << 10) & ABColumn) != 0 && (((bitBoard << 10) & teamOccupancy) == 0))
+            attacks |= (bitBoard << 10);
+        if (((bitBoard << 6) & GHColumn) != 0 && (((bitBoard << 6) & teamOccupancy) == 0))
+            attacks |= (bitBoard << 6);
 
-
-            return attacks;
-        }
+        return attacks;
+    }
 
 
     ulong CalculateBishopAttacks(int square, ulong teamOccupancy, ulong enemyOccupancy)

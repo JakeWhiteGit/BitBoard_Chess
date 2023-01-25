@@ -199,7 +199,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 12ef9937365d31146a88298923d06965, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fen: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+  fen: rnbqkbnr/pppppppp/8/8/P6P/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 --- !u!4 &359916911
 Transform:
   m_ObjectHideFlags: 0
@@ -328,7 +328,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b2261f1b1366b4844894c158c0e409e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedTile: 0
+  bitBoards: {fileID: 1806403603}
+  board: {fileID: 1744118968}
+  SelectedTile: {fileID: 0}
+  TileIndex: 0
 --- !u!4 &596674087
 Transform:
   m_ObjectHideFlags: 0
@@ -386,6 +389,8 @@ MonoBehaviour:
   p: {fileID: 5686030194819339876, guid: 216bd6753d685524880576c3b06eff47, type: 3}
   q: {fileID: 5686030194819339876, guid: 186030b0c3f8eda479bdcd631230298f, type: 3}
   r: {fileID: 5686030194819339876, guid: 03ee63cc6355fb448a544018c1bcd33d, type: 3}
+  Tiles: []
+  TilesObject: []
 --- !u!4 &1744118969
 Transform:
   m_ObjectHideFlags: 0
