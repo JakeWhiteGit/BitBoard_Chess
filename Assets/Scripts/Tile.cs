@@ -29,5 +29,21 @@ public class Tile : MonoBehaviour
             spriteRenderer.color = defaultColor;
         }
     }
+    void OnMouseDown()
+    {
+        if (selected && GameManager.PieceSelected)
+        {
+            Debug.Log(" tile makemove");
+            GameManager.StaticGameManager.MakeMove(location,
+                                                    GameManager.TileSelected,
+                                                    GameManager.PieceSelectedType,
+                                                    GameManager.PieceSelectedColor );
+        }
+        else
+        {
+            GameManager.StaticGameManager.ClearLegalMoves();
+            GameManager.PieceSelected = false;
+        }
+    }
 }
  

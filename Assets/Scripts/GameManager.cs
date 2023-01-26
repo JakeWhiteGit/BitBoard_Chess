@@ -4,14 +4,20 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
+    public static GameManager StaticGameManager;
+
     [SerializeField] Board board;
     [SerializeField] BitBoards bitBoards;
 
     public Camera cam;
-    public static GameManager StaticGameManager;
     public static bool PlayerColor;
-    public static int[,] EnPassant;
-    public static bool Turn;
+    public static int[] EnPassant;
+    public static bool IsWhitesTurn;
+
+    public static bool PieceSelected = false;
+    public static int PieceSelectedType = -1;
+    public static int PieceSelectedColor = -1;
+    public static int TileSelected = -1;
 
     void Awake()
     {
@@ -33,10 +39,50 @@ public class GameManager : MonoBehaviour
 
         InitializeBoardGUI();
 
-        bitBoards.StoreMoves();
+      //bitBoards.StoreMoves();
 
         ChoosePlayerColor();
        // RotateCamera();
+    }
+    public void MakeMove(int squareTo, int squareFrom, int pieceType, int pieceColor)
+    {
+        Debug.Log("makemove");
+        bitBoards.BoardState[pieceType] = bitBoards.RemoveBit(bitBoards.BoardState[pieceType], squareFrom);
+        bitBoards.BoardState[pieceColor] = bitBoards.RemoveBit(bitBoards.BoardState[pieceColor], squareFrom);
+
+        for (int i = 0; i < 2; i++)
+        {
+            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareFrom);
+        }
+        for (int i = 2; i < 8; i++)
+        {
+            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareFrom);
+        }
+
+        bitBoards.BoardState[pieceType] = bitBoards.SetBit(bitBoards.BoardState[pieceType], squareTo);
+        bitBoards.BoardState[pieceColor] = bitBoards.SetBit(bitBoards.BoardState[pieceColor], squareTo);
+
+
+
+        foreach (var piece in board.Pieces)
+        {
+            Destroy(piece);
+        }
+        
+        board.PlacePieces(true);
+        board.PlacePieces(false);
+
+        ClearLegalMoves();
+    }
+
+    public void ClearLegalMoves()
+    {
+        for (int i = 0; i < 64; i++)
+        {
+            board.Tiles[i].selected = false;
+        }
+        PieceSelectedType = -1;
+        PieceSelectedColor = -1;
     }
 
     private void InitializeBoardGUI()

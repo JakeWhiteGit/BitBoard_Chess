@@ -11,11 +11,8 @@ public class InputManager : MonoBehaviour
     Vector2 mousePosition;
     RaycastHit2D tileUnderCursor;
 
-    public Tile SelectedTile;
-    public int TileIndex;
+    Tile SelectedTile;
 
-    int pieceType;
-    int pieceColor;
     ulong legalMoves;
 
     void Update()
@@ -24,37 +21,39 @@ public class InputManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
-            HighlightLegalMoves();
+                HighlightLegalMoves();
+            Debug.Log($"{GameManager.PieceSelected}");
+        }
+        if (Input.GetMouseButtonDown(1))
+        {
+            GameManager.StaticGameManager.ClearLegalMoves();
         }
     }
 
     private void HighlightLegalMoves()
     {
-        for (int i = 0; i < 64; i++)
-        {
-            board.Tiles[i].selected = false;
-        }
-
-        //if there is a tile under the cursor return its position in the array
+        //if there is a tile under the cursor return
         if (tileUnderCursor.collider is null) return;
         SelectedTile = tileUnderCursor.collider.GetComponent<Tile>();
-        TileIndex = SelectedTile.location;
+        GameManager.TileSelected = SelectedTile.location;
 
-        pieceType = bitBoards.GetPieceType(TileIndex);
-        pieceColor = bitBoards.GetPieceColor(TileIndex);
-        legalMoves = bitBoards.CalculateSelectedMove(TileIndex, pieceType, pieceColor);
-
-        int[] legalMoveBitIndices = bitBoards.ReturnAllBitIndices(legalMoves);
-
-        for (int i = 0; i < legalMoveBitIndices.Length; i++)
+        if (!GameManager.PieceSelected) 
         {
-            board.Tiles[legalMoveBitIndices[i]].selected = false;
+            GameManager.PieceSelected = true;
+            //get all legal moves for tile index if any
+            GameManager.PieceSelectedType = bitBoards.GetPieceType(GameManager.TileSelected);
+            GameManager.PieceSelectedColor = bitBoards.GetPieceColor(GameManager.TileSelected);
+            legalMoves = bitBoards.CalculateSelectedMove(GameManager.TileSelected, GameManager.PieceSelectedType, GameManager.PieceSelectedColor);
 
-            if (board.Tiles[legalMoveBitIndices[i]].location == legalMoveBitIndices[i])
+            //pull every individual legal move and put into array
+            int[] legalMoveIndices = bitBoards.ReturnAllBitIndices(legalMoves);
+
+            for (int i = 0; i < legalMoveIndices.Length; i++)
             {
-                board.Tiles[legalMoveBitIndices[i]].selected = true;
+                board.Tiles[legalMoveIndices[i]].selected = true;
             }
         }
+
     }
 
     void CastRays()

@@ -53,11 +53,11 @@ public class FenTranslator : MonoBehaviour
     {
         if (fenPartitions[1] == "w")
         {
-            GameManager.Turn = true;
+            GameManager.IsWhitesTurn = true;
         }
         else
         {
-            GameManager.Turn = false;
+            GameManager.IsWhitesTurn = false;
         }
     }
 

@@ -6,18 +6,19 @@ using UnityEngine;
 public class Board : MonoBehaviour
 {
     [SerializeField] GameObject tilePrefab;
+    [SerializeField] BitBoards bitBoards;
 
     // Pieces same as FEN
     [SerializeField] GameObject B, K, N, P, Q, R, b, k, n, p, q, r;
 
     public Tile[] Tiles;
     public GameObject[] TilesObject;
+    public List<GameObject> Pieces = new List<GameObject>();
 
     void Start()
     {
 
     }
-
 
     public void GenerateBoard()
     {
@@ -53,6 +54,7 @@ public class Board : MonoBehaviour
         return tile;
     }
 
+    //method needs to be called twice for each colour
     public void PlacePieces(bool isWhite)
     {
         Dictionary<int, GameObject> pieceTypes = new Dictionary<int, GameObject>()
@@ -66,26 +68,27 @@ public class Board : MonoBehaviour
         };
 
         //this is the index of every piece color
-        int[] pieceIndeces = BitBoards.StaticBitBoards.ReturnAllBitIndices(BitBoards.BoardState[isWhite ? 0 : 1]);
+        int[] pieceIndeces = bitBoards.ReturnAllBitIndices(bitBoards.BoardState[isWhite ? 0 : 1]);
 
         //goes through the indeces of all pieces on the board
         foreach (var pieceType in pieceTypes)
         {
-            int[] indexes = BitBoards.StaticBitBoards.ReturnAllBitIndices(BitBoards.BoardState[pieceType.Key]);
+            int[] indexes = bitBoards.ReturnAllBitIndices(bitBoards.BoardState[pieceType.Key]);
             instantiatePiece(pieceIndeces, indexes, pieceType.Value);
         }
     }
 
     //checking to see if i have a match between color and piece index to place a piece
-    void instantiatePiece(int[] indices1, int[] indices2, GameObject piece)
+    void instantiatePiece(int[] pieceColorIndices, int[] pieceTypeIndices, GameObject piecePrefab)
     {
-        for (int i = 0; i < indices1.Length; i++)
+        //loop through both the array of all color locations and all type values
+        for (int i = 0; i < pieceColorIndices.Length; i++)
         {
-            for (int j = 0; j < indices2.Length; j++)
+            for (int j = 0; j < pieceTypeIndices.Length; j++)
             {
-                if (indices1[i] == indices2[j])
+                if (pieceColorIndices[i] == pieceTypeIndices[j])
                 {
-                    Instantiate(piece, Tiles[indices1[i]].transform.position, Quaternion.identity, Tiles[indices1[i]].transform);
+                   Pieces.Add(Instantiate(piecePrefab, Tiles[pieceColorIndices[i]].transform.position, Quaternion.identity, Tiles[pieceColorIndices[i]].transform));
                 }
             }
         }

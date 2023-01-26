@@ -8,6 +8,7 @@ using Unity.Burst;
 
 public class BitBoards : MonoBehaviour
 {
+    [SerializeField] Board board;
     // creating singleton for monobehaviour functionality in the unity editor
     public static BitBoards StaticBitBoards;
 
@@ -15,7 +16,7 @@ public class BitBoards : MonoBehaviour
     public static ulong PlayerTileSelection = 0L;
 
     //see pieces enum
-    public static ulong[] BoardState =
+    public ulong[] BoardState =
     {
         0, //whites bitboard
         0, //blacks bitboard
@@ -164,7 +165,7 @@ public class BitBoards : MonoBehaviour
 
     public int GetPieceType(int square)
     {
-        int pieceType = 0;
+        int pieceType = -1;
 
         for (int i = 2; i < 8; i++)
         {
@@ -178,7 +179,7 @@ public class BitBoards : MonoBehaviour
     }
     public int GetPieceColor(int square)
     {
-        int pieceColor = 0;
+        int pieceColor = -1;
 
         for (int i = 0; i < 2; i++)
         {
