@@ -330,8 +330,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bitBoards: {fileID: 1806403603}
   board: {fileID: 1744118968}
-  SelectedTile: {fileID: 0}
-  TileIndex: 0
 --- !u!4 &596674087
 Transform:
   m_ObjectHideFlags: 0
@@ -377,6 +375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tilePrefab: {fileID: 6510405047372369160, guid: bf9470848ffb49741a53986445a64bfe, type: 3}
+  bitBoards: {fileID: 1806403603}
   B: {fileID: 5686030194819339876, guid: 5093cecfb1725774a88ce2600af3e774, type: 3}
   K: {fileID: 5686030194819339876, guid: b3eefe72350a42f47bd968b1e5be60f8, type: 3}
   N: {fileID: 5686030194819339876, guid: 2dc3d055861688a4a838399893f651a7, type: 3}
@@ -391,6 +390,7 @@ MonoBehaviour:
   r: {fileID: 5686030194819339876, guid: 03ee63cc6355fb448a544018c1bcd33d, type: 3}
   Tiles: []
   TilesObject: []
+  Pieces: []
 --- !u!4 &1744118969
 Transform:
   m_ObjectHideFlags: 0
@@ -435,6 +435,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4247d372153f80c418a14dc4b11fd585, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  board: {fileID: 1744118968}
+  BoardState: 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 --- !u!4 &1806403604
 Transform:
   m_ObjectHideFlags: 0
