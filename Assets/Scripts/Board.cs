@@ -59,6 +59,7 @@ public class Board : MonoBehaviour
     {
         Dictionary<int, GameObject> pieceTypes = new Dictionary<int, GameObject>()
         {
+            //numbers match boardstate enum from BitBoards.cs
             {2, isWhite ? B : b},
             {3, isWhite ? K : k},
             {4, isWhite ? N : n},
@@ -67,7 +68,7 @@ public class Board : MonoBehaviour
             {7, isWhite ? R : r},
         };
 
-        //this is the index of every piece color
+        //this is the index of every piece color 
         int[] pieceIndeces = bitBoards.ReturnAllBitIndices(bitBoards.BoardState[isWhite ? 0 : 1]);
 
         //goes through the indeces of all pieces on the board

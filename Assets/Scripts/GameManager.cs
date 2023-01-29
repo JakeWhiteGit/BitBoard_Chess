@@ -44,6 +44,11 @@ public class GameManager : MonoBehaviour
         ChoosePlayerColor();
        // RotateCamera();
     }
+    void Update()
+    {
+        //Debug.Log($"{PieceSelected}");
+
+    }
     public void MakeMove(int squareTo, int squareFrom, int pieceType, int pieceColor)
     {
         Debug.Log("makemove");
@@ -52,11 +57,11 @@ public class GameManager : MonoBehaviour
 
         for (int i = 0; i < 2; i++)
         {
-            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareFrom);
+            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareTo);
         }
         for (int i = 2; i < 8; i++)
         {
-            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareFrom);
+            bitBoards.BoardState[i] = bitBoards.RemoveBit(bitBoards.BoardState[i], squareTo);
         }
 
         bitBoards.BoardState[pieceType] = bitBoards.SetBit(bitBoards.BoardState[pieceType], squareTo);
@@ -71,6 +76,8 @@ public class GameManager : MonoBehaviour
         
         board.PlacePieces(true);
         board.PlacePieces(false);
+        bitBoards.PrintBitBoard(bitBoards.BoardState[pieceType], "piecetype");
+        bitBoards.PrintBitBoard(bitBoards.BoardState[pieceColor], "piececolor");
 
         ClearLegalMoves();
     }

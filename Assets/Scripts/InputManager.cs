@@ -21,12 +21,14 @@ public class InputManager : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0))
         {
+                Debug.Log($"{GameManager.PieceSelected}");
                 HighlightLegalMoves();
-            Debug.Log($"{GameManager.PieceSelected}");
+
         }
         if (Input.GetMouseButtonDown(1))
         {
             GameManager.StaticGameManager.ClearLegalMoves();
+            GameManager.PieceSelected = false;
         }
     }
 

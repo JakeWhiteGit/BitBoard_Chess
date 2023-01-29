@@ -10,9 +10,16 @@ public class Tile : MonoBehaviour
 
     public bool selected;
 
+    ulong legalMoves;
+    [SerializeField] BitBoards bitBoards;
+    [SerializeField] Board board;
+
+
     void Awake()
     {
-        spriteRenderer = GetComponent<SpriteRenderer>();    
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        bitBoards = FindObjectOfType<BitBoards>();
+        board = FindObjectOfType<Board>();
     }
     void Start()
     {
@@ -33,7 +40,6 @@ public class Tile : MonoBehaviour
     {
         if (selected && GameManager.PieceSelected)
         {
-            Debug.Log(" tile makemove");
             GameManager.StaticGameManager.MakeMove(location,
                                                     GameManager.TileSelected,
                                                     GameManager.PieceSelectedType,
@@ -41,9 +47,33 @@ public class Tile : MonoBehaviour
         }
         else
         {
-            GameManager.StaticGameManager.ClearLegalMoves();
             GameManager.PieceSelected = false;
+            GameManager.StaticGameManager.ClearLegalMoves();
+            HighlightLegalMoves();
         }
+    }
+    private void HighlightLegalMoves()
+    {
+        //if there is a tile under the cursor return
+        GameManager.TileSelected = location;
+
+        if (!GameManager.PieceSelected)
+        {
+            GameManager.PieceSelected = true;
+            //get all legal moves for tile index if any
+            GameManager.PieceSelectedType = bitBoards.GetPieceType(GameManager.TileSelected);
+            GameManager.PieceSelectedColor = bitBoards.GetPieceColor(GameManager.TileSelected);
+            legalMoves = bitBoards.CalculateSelectedMove(GameManager.TileSelected, GameManager.PieceSelectedType, GameManager.PieceSelectedColor);
+
+            //pull every individual legal move and put into array
+            int[] legalMoveIndices = bitBoards.ReturnAllBitIndices(legalMoves);
+
+            for (int i = 0; i < legalMoveIndices.Length; i++)
+            {
+                board.Tiles[legalMoveIndices[i]].selected = true;
+            }
+        }
+
     }
 }
  
